@@ -97,7 +97,8 @@
             <?php endif; ?>
 
             <div class="text-center mt-4">
-                <a href="index.php?uc=rapportVisite&action=liste" class="btn btn-secondary">Retour à la liste</a>
+                <a href="javascript:history.back()" class="btn btn-secondary">Retour aux résultats</a>
+                <a href="index.php?uc=rapportVisite&action=recherche" class="btn btn-outline-secondary">Nouvelle recherche</a>
             </div>
         </div>
     </div>

@@ -18,7 +18,7 @@
 
 
 
-        <form method="post" action="index.php?uc=rapportVisite&action=validerSaisie">
+        <form id="formSaisieRapport" method="post" action="index.php?uc=rapportVisite&action=validerSaisie">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <span class="badge bg-secondary">État :
                     <?php
@@ -184,4 +184,35 @@
             <button type="submit" class="btn btn-primary">Enregistrer</button>
         </form>
     </div>
+
+    <script>
+    document.getElementById('formSaisieRapport').addEventListener('submit', function(e) {
+        let med1 = document.querySelector('select[name="medicamentPresente"]').value;
+        let med2 = document.querySelector('select[name="medicamentPrescrit"]').value;
+        
+        // Exception 3-a
+        if (!med1 && !med2) {
+            if (!confirm("Vous n'avez pas saisi de médicament présenté. Voulez-vous confirmer l'enregistrement sans médicament ?")) {
+                e.preventDefault();
+                return false;
+            }
+        }
+
+        // Exception 3-b
+        let qtes = document.querySelectorAll('select[name="quantiteEchantillon[]"]');
+        let hasSample = false;
+        qtes.forEach(function(select) {
+            if (select.value && select.value !== "" && select.value !== "Qté") {
+                hasSample = true;
+            }
+        });
+
+        if (!hasSample) {
+            if (!confirm("Vous n'avez pas saisi de quantité d'échantillon. Voulez-vous confirmer l'enregistrement sans échantillon ?")) {
+                e.preventDefault();
+                return false;
+            }
+        }
+    });
+    </script>
 </section>

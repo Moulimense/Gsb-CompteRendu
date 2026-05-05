@@ -44,18 +44,41 @@ switch ($action) {
         break;
 
     case 'validerAjout':
-        $nom = $_POST['nom'];
-        $prenom = $_POST['prenom'];
-        $adresse = $_POST['adresse'];
-        $cp = $_POST['cp'];
-        $ville = $_POST['ville'];
-        $coef = $_POST['coef'];
-        $typeCode = $_POST['typeCode'];
+        $nom = trim($_POST['nom'] ?? '');
+        $prenom = trim($_POST['prenom'] ?? '');
+        $adresse = trim($_POST['adresse'] ?? '');
+        $cp = trim($_POST['cp'] ?? '');
+        $ville = trim($_POST['ville'] ?? '');
+        $coef = trim($_POST['coef'] ?? '');
+        $typeCode = $_POST['typeCode'] ?? '';
         $speCodes = $_POST['speCode'] ?? [];
 
+        // Exception 5-a: Validate mandatory fields
+        $champsManquants = [];
+        if (empty($nom)) $champsManquants[] = 'Nom';
+        if (empty($prenom)) $champsManquants[] = 'Prénom';
+        if (empty($adresse)) $champsManquants[] = 'Adresse';
+        if (empty($cp)) $champsManquants[] = 'Code Postal';
+        if (empty($ville)) $champsManquants[] = 'Ville';
+        if ($coef === '') $champsManquants[] = 'Coefficient de notoriété';
+
+        if (!empty($champsManquants)) {
+            $erreur = "Information(s) obligatoire(s) manquante(s) : " . implode(', ', $champsManquants) . ".";
+            $lesTypes = getTypesPraticien();
+            $lesSpecialites = getSpecialites();
+            $mode = 'ajouter';
+            // Reconstruct praticien for form repopulation
+            $praticien = [
+                'PRA_NOM' => $nom, 'PRA_PRENOM' => $prenom, 'PRA_ADRESSE' => $adresse,
+                'PRA_CP' => $cp, 'PRA_VILLE' => $ville, 'PRA_COEFNOTORIETE' => $coef,
+                'TYP_CODE' => $typeCode, 'SPE_CODES' => $speCodes
+            ];
+            include("vues/v_formPraticien.php");
+            break;
+        }
+
         if (ajouterPraticien($nom, $prenom, $adresse, $cp, $ville, $coef, $typeCode, $speCodes)) {
-            $erreur = "Le praticien a été ajouté avec succès."; // Using $erreur as success message for simplicity in view
-            // Refresh list
+            $info = "Le praticien a été ajouté avec succès.";
             $lesPraticiens = getPraticiens();
             include("vues/v_gererPraticien.php");
         } else {
@@ -78,17 +101,40 @@ switch ($action) {
 
     case 'validerModif':
         $num = $_POST['num'];
-        $nom = $_POST['nom'];
-        $prenom = $_POST['prenom'];
-        $adresse = $_POST['adresse'];
-        $cp = $_POST['cp'];
-        $ville = $_POST['ville'];
-        $coef = $_POST['coef'];
-        $typeCode = $_POST['typeCode'];
+        $nom = trim($_POST['nom'] ?? '');
+        $prenom = trim($_POST['prenom'] ?? '');
+        $adresse = trim($_POST['adresse'] ?? '');
+        $cp = trim($_POST['cp'] ?? '');
+        $ville = trim($_POST['ville'] ?? '');
+        $coef = trim($_POST['coef'] ?? '');
+        $typeCode = $_POST['typeCode'] ?? '';
         $speCodes = $_POST['speCode'] ?? [];
 
+        // Exception 5-a: Validate mandatory fields
+        $champsManquants = [];
+        if (empty($nom)) $champsManquants[] = 'Nom';
+        if (empty($prenom)) $champsManquants[] = 'Prénom';
+        if (empty($adresse)) $champsManquants[] = 'Adresse';
+        if (empty($cp)) $champsManquants[] = 'Code Postal';
+        if (empty($ville)) $champsManquants[] = 'Ville';
+        if ($coef === '') $champsManquants[] = 'Coefficient de notoriété';
+
+        if (!empty($champsManquants)) {
+            $erreur = "Information(s) obligatoire(s) manquante(s) : " . implode(', ', $champsManquants) . ".";
+            $lesTypes = getTypesPraticien();
+            $lesSpecialites = getSpecialites();
+            $mode = 'modifier';
+            $praticien = [
+                'PRA_NUM' => $num, 'PRA_NOM' => $nom, 'PRA_PRENOM' => $prenom, 'PRA_ADRESSE' => $adresse,
+                'PRA_CP' => $cp, 'PRA_VILLE' => $ville, 'PRA_COEFNOTORIETE' => $coef,
+                'TYP_CODE' => $typeCode, 'SPE_CODES' => $speCodes
+            ];
+            include("vues/v_formPraticien.php");
+            break;
+        }
+
         if (modifierPraticien($num, $nom, $prenom, $adresse, $cp, $ville, $coef, $typeCode, $speCodes)) {
-            $erreur = "Le praticien a été modifié avec succès.";
+            $info = "Le praticien a été modifié avec succès.";
             $lesPraticiens = getPraticiens();
             include("vues/v_gererPraticien.php");
         } else {

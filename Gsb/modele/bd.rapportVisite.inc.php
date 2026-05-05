@@ -44,12 +44,28 @@ function getRapportsRegion($codeRegion)
     return $req->fetchAll(PDO::FETCH_ASSOC);
 }
 // ...
-function getRapportsRegionFiltres($codeRegion, $dateDebut, $dateFin, $idPraticien = null)
+function getVisiteursRegion($codeRegion)
+{
+    $connexion = connexionPDO();
+    $sql = "
+        SELECT DISTINCT c.COL_MATRICULE, c.COL_NOM, c.COL_PRENOM
+        FROM collaborateur c
+        WHERE c.REG_CODE = :codeRegion
+        ORDER BY c.COL_NOM, c.COL_PRENOM
+    ";
+    $req = $connexion->prepare($sql);
+    $req->bindValue(':codeRegion', $codeRegion);
+    $req->execute();
+    return $req->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function getRapportsRegionFiltres($codeRegion, $dateDebut, $dateFin, $idPraticien = null, $visMatricule = null)
 {
     $connexion = connexionPDO();
     $sql = "
         SELECT rv.RAP_NUM, rv.RAP_DATEVISITE, rv.RAP_MOTIF, rv.RAP_BILAN, rv.etat_code, rv.VIS_MATRICULE,
                p.PRA_NUM, p.PRA_NOM, p.PRA_PRENOM, p.PRA_VILLE,
+               c.COL_NOM as VIS_NOM, c.COL_PRENOM as VIS_PRENOM,
                r.REG_NOM,
                med1.MED_NOMCOMMERCIAL as MED1_NOM, med2.MED_NOMCOMMERCIAL as MED2_NOM,
                rv.med_depotlegal_presente1, rv.med_depotlegal_presente2,
@@ -70,8 +86,11 @@ function getRapportsRegionFiltres($codeRegion, $dateDebut, $dateFin, $idPraticie
     if ($idPraticien) {
         $sql .= " AND rv.PRA_NUM = :praNum";
     }
+    if ($visMatricule) {
+        $sql .= " AND rv.VIS_MATRICULE = :visMatricule";
+    }
 
-    $sql .= " ORDER BY r.REG_NOM, rv.RAP_DATEVISITE DESC";
+    $sql .= " ORDER BY rv.RAP_DATEVISITE DESC";
 
     $req = $connexion->prepare($sql);
     $req->bindValue(':codeRegion', $codeRegion);
@@ -80,6 +99,9 @@ function getRapportsRegionFiltres($codeRegion, $dateDebut, $dateFin, $idPraticie
 
     if ($idPraticien) {
         $req->bindValue(':praNum', $idPraticien);
+    }
+    if ($visMatricule) {
+        $req->bindValue(':visMatricule', $visMatricule);
     }
 
     $req->execute();
@@ -246,13 +268,15 @@ function getRapportsFiltres($idVisiteur, $dateDebut, $dateFin, $idPraticien = nu
                p.PRA_NUM, p.PRA_NOM, p.PRA_PRENOM, p.PRA_VILLE,
                r.REG_NOM,
                med1.MED_NOMCOMMERCIAL as MED1_NOM, med2.MED_NOMCOMMERCIAL as MED2_NOM,
-               rv.med_depotlegal_presente1, rv.med_depotlegal_presente2
+               rv.med_depotlegal_presente1, rv.med_depotlegal_presente2,
+               m.MO_Libelle as MOTIF_LIBELLE
         FROM rapport_visite rv
         INNER JOIN praticien p ON rv.PRA_NUM = p.PRA_NUM
         INNER JOIN departement d ON LEFT(p.PRA_CP, 2) = d.NoDEPT
         INNER JOIN region r ON d.REG_CODE = r.REG_CODE
         LEFT JOIN medicament med1 ON rv.med_depotlegal_presente1 = med1.MED_DEPOTLEGAL
         LEFT JOIN medicament med2 ON rv.med_depotlegal_presente2 = med2.MED_DEPOTLEGAL
+        LEFT JOIN motif m ON rv.RAP_MOTIF = m.MO_Code
         WHERE rv.VIS_MATRICULE = :vis
         AND rv.RAP_DATEVISITE BETWEEN :dateDeb AND :dateFin
     ";
@@ -261,7 +285,7 @@ function getRapportsFiltres($idVisiteur, $dateDebut, $dateFin, $idPraticien = nu
         $sql .= " AND rv.PRA_NUM = :praNum";
     }
 
-    $sql .= " ORDER BY r.REG_NOM, rv.RAP_DATEVISITE DESC";
+    $sql .= " ORDER BY rv.RAP_DATEVISITE DESC";
 
     $req = $connexion->prepare($sql);
     $req->bindValue(':vis', $idVisiteur);
@@ -318,7 +342,7 @@ function getRapportsRegionNouveaux_Confirmed($codeRegion)
         LEFT JOIN motif m ON rv.RAP_MOTIF = m.MO_Code
         WHERE c.REG_CODE = :codeRegion
         AND rv.etat_code = 2
-        ORDER BY c.COL_NOM, rv.RAP_DATEVISITE DESC
+        ORDER BY c.COL_NOM, c.COL_PRENOM, rv.RAP_DATEVISITE DESC
     ";
     $req = $connexion->prepare($sql);
     $req->bindValue(':codeRegion', $codeRegion);
@@ -342,7 +366,7 @@ function getRapportsSecteurNouveaux($codeSecteur)
         LEFT JOIN medicament med2 ON rv.med_depotlegal_presente2 = med2.MED_DEPOTLEGAL
         WHERE c.SEC_CODE = :codeSecteur
         AND rv.etat_code = 2
-        ORDER BY c.COL_NOM, rv.RAP_DATEVISITE DESC
+        ORDER BY c.COL_NOM, c.COL_PRENOM, rv.RAP_DATEVISITE DESC
     ";
     $req = $connexion->prepare($sql);
     $req->bindValue(':codeSecteur', $codeSecteur);

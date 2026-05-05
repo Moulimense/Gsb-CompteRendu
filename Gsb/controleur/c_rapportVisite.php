@@ -51,6 +51,22 @@ switch ($action) {
             header('Location: index.php?uc=rapportVisite&action=liste');
             exit();
         }
+
+        $forceNouveau = isset($_GET['forceNouveau']) && $_GET['forceNouveau'] == 1;
+        $tousLesRapports = getRapportsVisiteurTous($idVisiteur);
+        $rapportsEnCours = [];
+        foreach ($tousLesRapports as $r) {
+            if ($r['etat_code'] == 1) {
+                $rapportsEnCours[] = $r;
+            }
+        }
+
+        if (count($rapportsEnCours) > 0 && !$forceNouveau) {
+            // Exception 2-a: Show list of drafts
+            include("vues/v_choixRapportEnCours.php");
+            break;
+        }
+
         $lesPraticiens = getPraticiens();
         $lesMedicaments = getAllNomMedicament();
         $lesMotifs = getAllMotifs();
@@ -90,29 +106,39 @@ switch ($action) {
         break;
 
     case 'recherche':
-        if ($estVisiteur) {
-            header('Location: index.php?uc=rapportVisite&action=liste');
-            exit();
-        }
-
-        $infosCompte = getAllInformationCompte($idVisiteur);
-        $codeRegion = $infosCompte['code_region'] ?? null;
-        $codeSecteur = $infosCompte['code_secteur'] ?? null;
-
-
-        $lesPraticiens = getPraticiensByRegion($codeRegion);
-
         $dateDebut = $_POST['dateDebut'] ?? date('Y-m-d', strtotime('-1 month'));
         $dateFin = $_POST['dateFin'] ?? date('Y-m-d');
         $praNum = $_POST['praNum'] ?? null;
 
-        $filtreType = $_POST['filtreType'] ?? 'region'; // Default filter
-
-        // Always fetch reports. If POST, use posted values. If GET, use defaults (-1 month).
-        if ($isResponsable && $filtreType === 'secteur' && $codeSecteur) {
-            $lesRapports = getRapportsSecteurFiltres($codeSecteur, $dateDebut, $dateFin, $praNum);
+        if ($estVisiteur) {
+            $lesPraticiens = getPraticiensVisites($idVisiteur);
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $lesRapports = getRapportsFiltres($idVisiteur, $dateDebut, $dateFin, $praNum);
+                if (empty($lesRapports)) {
+                    $erreur = "Aucun rapport de visite à cette période n'existe.";
+                }
+            }
         } else {
-            $lesRapports = getRapportsRegionFiltres($codeRegion, $dateDebut, $dateFin, $praNum);
+            $infosCompte = getAllInformationCompte($idVisiteur);
+            $codeRegion = $infosCompte['code_region'] ?? null;
+            $codeSecteur = $infosCompte['code_secteur'] ?? null;
+
+            $lesPraticiens = getPraticiensByRegion($codeRegion);
+            $lesVisiteurs = getVisiteursRegion($codeRegion);
+            $visMatricule = $_POST['visMatricule'] ?? null;
+            $filtreType = $_POST['filtreType'] ?? 'region'; // Default filter
+
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                // Always fetch reports. If POST, use posted values.
+                if ($isResponsable && $filtreType === 'secteur' && $codeSecteur) {
+                    $lesRapports = getRapportsSecteurFiltres($codeSecteur, $dateDebut, $dateFin, $praNum);
+                } else {
+                    $lesRapports = getRapportsRegionFiltres($codeRegion, $dateDebut, $dateFin, $praNum, $visMatricule);
+                }
+                if (empty($lesRapports)) {
+                    $erreur = "Aucun rapport de visite à cette période n'existe.";
+                }
+            }
         }
 
         include("vues/v_rechercheRapports.php");
@@ -221,13 +247,25 @@ switch ($action) {
             }
         }
 
-        if (empty($dateVisite) || empty($motif) || empty($bilan) || empty($idPraticien)) {
-            $erreurs[] = "Tous les champs obligatoires doivent être remplis.";
-        }
+        if ($etat == 2) { // Saisie définitive checked
+            // Exception 3-c
+            $champsManquants = [];
+            if (empty($idPraticien)) $champsManquants[] = "code praticien";
+            if (empty($dateVisite)) $champsManquants[] = "date visite";
+            if (empty($motif)) $champsManquants[] = "motif visite";
+            if (empty($bilan)) $champsManquants[] = "bilan";
+            if ($coeffConfiance === null || $coeffConfiance === '') $champsManquants[] = "niveau confiance";
 
-        if ($motif == 5 && empty($autreMotif)) {
-            $erreurs[] = "Veuillez préciser le motif autre.";
+            if (!empty($champsManquants)) {
+                $erreurs[] = "Information(s) manquante(s) : " . implode(', ', $champsManquants) . ".";
+            }
+
+            // Exception 3-d
+            if ($motif == 5 && empty($autreMotif)) {
+                $erreurs[] = "Veuillez saisir le motif autre.";
+            }
         }
+        // If $etat == 1 (brouillon), we don't enforce these strict checks (Exception 4-a allows saving incomplete drafts)
 
         if ($coeffConfiance !== null && $coeffConfiance !== '' && ($coeffConfiance < 0 || $coeffConfiance > 100)) {
             $erreurs[] = "Le coefficient de confiance doit être compris entre 0 et 100.";
@@ -250,14 +288,9 @@ switch ($action) {
 
 
 
-        // Validation globale des médicaments (Présenté, prescrit ou échantillon)
-        if (empty($medicamentPresente) && empty($medicamentPrescrit) && !$hasSample) {
-            // Check for confirmation override
-            if (!isset($_POST['confirmerSansMedicament'])) {
-                // We add a specific error that might trigger a UI element or just text
-                $erreurs[] = "Aucun médicament (présenté, prescrit ou échantillon) n'a été sélectionné.";
-            }
-        }
+        // Javascript handles the confirmation (Exceptions 3-a and 3-b)
+        // No server-side block here because the JS confirm() will prevent submission if not confirmed.
+        // If it reaches here, the user has either filled the fields or clicked 'OK' on the JS confirm.
 
         if (!empty($erreurs)) {
             $lesPraticiens = getPraticiens();

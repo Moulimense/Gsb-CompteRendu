@@ -4,15 +4,67 @@
 
         <?php if (isset($erreur)) { ?>
             <div class="alert alert-danger">
-                <?php echo $erreur; ?>
+                <?php echo htmlspecialchars($erreur); ?>
             </div>
         <?php } ?>
 
-        <?php if (!isset($_SESSION['habilitation']) || $_SESSION['habilitation'] !== 'Visiteur'): ?>
-            <div class="mb-4 text-center">
-                <a href="index.php?uc=gererPraticien&action=ajouter" class="btn btn-success" title="Ajouter un praticien">
-                    <i class="fa fa-plus"></i> Ajouter un praticien
-                </a>
+        <?php if (isset($info)) { ?>
+            <div class="alert alert-success">
+                <?php echo htmlspecialchars($info); ?>
+            </div>
+        <?php } ?>
+
+        <?php
+        $hab = $_SESSION['habilitation'] ?? 1;
+        $estVisiteurLocal = ($hab == 1);
+        ?>
+
+        <?php if ($estVisiteurLocal): ?>
+            <!-- Visitor: Dropdown to select a practitioner to consult -->
+            <div class="card shadow mb-4 p-4 mx-auto" style="max-width: 700px;">
+                <h5 class="mb-3">Sélectionner un praticien à consulter</h5>
+                <form action="index.php" method="get" class="row align-items-end">
+                    <input type="hidden" name="uc" value="gererPraticien">
+                    <input type="hidden" name="action" value="consulter">
+                    <div class="col-md-8 mb-2">
+                        <label for="selectPraticienConsult" class="form-label">Praticien :</label>
+                        <select name="num" id="selectPraticienConsult" class="form-select" required>
+                            <option value="">-- Sélectionner un praticien --</option>
+                            <?php foreach ($lesPraticiens as $unPraticien): ?>
+                                <option value="<?= $unPraticien['PRA_NUM'] ?>">
+                                    <?= htmlspecialchars($unPraticien['PRA_NOM'] . ' ' . $unPraticien['PRA_PRENOM'] . ' - ' . $unPraticien['PRA_VILLE']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <button type="submit" class="btn btn-info text-white">Consulter</button>
+                    </div>
+                </form>
+            </div>
+        <?php else: ?>
+            <!-- Delegate: Dropdown to select a practitioner to edit -->
+            <div class="card shadow mb-4 p-4 mx-auto" style="max-width: 700px;">
+                <h5 class="mb-3">Sélectionner un praticien à modifier</h5>
+                <form action="index.php" method="get" class="row align-items-end">
+                    <input type="hidden" name="uc" value="gererPraticien">
+                    <input type="hidden" name="action" value="modifier">
+                    <div class="col-md-8 mb-2">
+                        <label for="selectPraticien" class="form-label">Praticien :</label>
+                        <select name="num" id="selectPraticien" class="form-select" required>
+                            <option value="">-- Sélectionner un praticien --</option>
+                            <?php foreach ($lesPraticiens as $unPraticien): ?>
+                                <option value="<?= $unPraticien['PRA_NUM'] ?>">
+                                    <?= htmlspecialchars($unPraticien['PRA_NOM'] . ' ' . $unPraticien['PRA_PRENOM'] . ' - ' . $unPraticien['PRA_VILLE']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Modifier</button>
+                        <a href="index.php?uc=gererPraticien&action=ajouter" class="btn btn-success">+ Nouveau</a>
+                    </div>
+                </form>
             </div>
         <?php endif; ?>
 
@@ -36,20 +88,19 @@
                     <tbody>
                         <?php foreach ($lesPraticiens as $unPraticien) { ?>
                             <tr>
-                                <td><?php echo $unPraticien['PRA_NOM']; ?></td>
-                                <td><?php echo $unPraticien['PRA_PRENOM']; ?></td>
-                                <td><?php echo $unPraticien['PRA_VILLE']; ?></td>
-                                <td><?php echo !empty($unPraticien['TYP_LIBELLE']) ? $unPraticien['TYP_LIBELLE'] : '-'; ?>
+                                <td><?php echo htmlspecialchars($unPraticien['PRA_NOM']); ?></td>
+                                <td><?php echo htmlspecialchars($unPraticien['PRA_PRENOM']); ?></td>
+                                <td><?php echo htmlspecialchars($unPraticien['PRA_VILLE']); ?></td>
+                                <td><?php echo !empty($unPraticien['TYP_LIBELLE']) ? htmlspecialchars($unPraticien['TYP_LIBELLE']) : '-'; ?>
                                 </td>
-                                <td><?php echo !empty($unPraticien['SPE_LIBELLE']) ? $unPraticien['SPE_LIBELLE'] : '-'; ?>
+                                <td><?php echo !empty($unPraticien['SPE_LIBELLE']) ? htmlspecialchars($unPraticien['SPE_LIBELLE']) : '-'; ?>
                                 </td>
                                 <td>
                                     <a href="index.php?uc=gererPraticien&action=consulter&num=<?php echo $unPraticien['PRA_NUM']; ?>"
                                         class="btn btn-info btn-sm text-white">Consulter</a>
-                                    <?php if (!isset($_SESSION['habilitation']) || $_SESSION['habilitation'] !== 'Visiteur'): ?>
+                                    <?php if (!$estVisiteurLocal): ?>
                                         <a href="index.php?uc=gererPraticien&action=modifier&num=<?php echo $unPraticien['PRA_NUM']; ?>"
                                             class="btn btn-primary btn-sm">Modifier</a>
-
                                     <?php endif; ?>
                                 </td>
                             </tr>

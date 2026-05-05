@@ -57,16 +57,14 @@
             </a>
             <ul class="dropdown-menu" aria-labelledby="navbarDropdownRapport">';
                             if (!$isResponsable) {
-                                echo '<li><a class="dropdown-item" href="index.php?uc=rapportVisite&action=liste">Consulter/Modifier</a></li>';
+                                echo '<li><a class="dropdown-item" href="index.php?uc=rapportVisite&action=liste">Mes brouillons</a></li>';
                                 echo '<li><a class="dropdown-item" href="index.php?uc=rapportVisite&action=nouveau">Créer un nouveau rapport</a></li>';
                             }
+                            echo '<li><a class="dropdown-item" href="index.php?uc=rapportVisite&action=recherche">Consulter/Rechercher</a></li>';
 
                             if (!$estVisiteur) {
-                                if (!$isResponsable) {
-                                    echo '<li><hr class="dropdown-divider"></li>';
-                                }
+                                echo '<li><hr class="dropdown-divider"></li>';
                                 echo '<li><a class="dropdown-item" href="index.php?uc=rapportVisite&action=nouveauxRapportsRegion">Nouveaux rapports région</a></li>';
-                                echo '<li><a class="dropdown-item" href="index.php?uc=rapportVisite&action=recherche">Historique des rapports de visite</a></li>';
                             }
                             echo '</ul></li>';
 
