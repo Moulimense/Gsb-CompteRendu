@@ -32,7 +32,7 @@ switch ($uc) {
     }
     case 'praticiens': {
         if (!empty($_SESSION['login'])) {
-            include('controleur/c_praticien.php');
+            include('controleur/c_praticiens.php');
         } else {
             include('vues/v_accesInterdit.php');
         }
@@ -41,7 +41,14 @@ switch ($uc) {
 
     case 'gererPraticien': {
         if (!empty($_SESSION['login'])) {
-            include('controleur/c_gererPraticien.php');
+            // Seuls les délégués et responsables peuvent gérer les praticiens
+            $habCheck = $_SESSION['habilitation'] ?? 0;
+            $estVisiteurCheck = ($habCheck == 1);
+            if ($estVisiteurCheck) {
+                include('vues/v_accesInterdit.php');
+            } else {
+                include('controleur/c_gererPraticien.php');
+            }
         } else {
             include('vues/v_accesInterdit.php');
         }

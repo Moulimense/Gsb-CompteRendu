@@ -68,18 +68,27 @@
                             }
                             echo '</ul></li>';
 
-                            // Menu Gérer les praticiens
-                            $activePraticien = (isset($_GET['uc']) && $_GET['uc'] === 'gererPraticien') ? ' active' : '';
-                            echo '<li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle btn-outline-info rounded-pill px-3 fw-bold' . $activePraticien . '" 
-               href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-               Gérer les praticiens
-            </a>
-            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                <li><a class="dropdown-item" href="index.php?uc=gererPraticien&action=liste&filtre=region">Par région</a></li>
-                <li><a class="dropdown-item" href="index.php?uc=gererPraticien&action=liste&filtre=global">Afficher praticiens</a></li>
-            </ul>
-          </li>';
+                            // Menu Consulter praticiens (accessible à tous)
+                            $activePraticienConsult = (isset($_GET['uc']) && $_GET['uc'] === 'praticiens') ? ' active' : '';
+                            echo '<li class="nav-item">
+                                <a class="nav-link btn-outline-info rounded-pill px-3 fw-bold' . $activePraticienConsult . '" 
+                                   href="index.php?uc=praticiens&action=formulaire">Praticiens</a>
+                            </li>';
+
+                            // Menu Gérer les praticiens (délégué/responsable uniquement)
+                            if (!$estVisiteur) {
+                                $activePraticien = (isset($_GET['uc']) && $_GET['uc'] === 'gererPraticien') ? ' active' : '';
+                                echo '<li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle btn-outline-info rounded-pill px-3 fw-bold' . $activePraticien . '" 
+                   href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                   Gérer les praticiens
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                    <li><a class="dropdown-item" href="index.php?uc=gererPraticien&action=liste&filtre=region">Par région</a></li>
+                    <li><a class="dropdown-item" href="index.php?uc=gererPraticien&action=liste&filtre=global">Afficher praticiens</a></li>
+                </ul>
+              </li>';
+                            }
                         }
                         ?>
                         <li class="nav-item">
